@@ -4,19 +4,15 @@ Save a bookmark with `POST /bookmarks` and read the collection with `GET /bookma
 
 ## Run locally
 
-From the repository root, create a virtual environment with Python 3.11 or newer.
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run these commands from the repository root.
 
 ```sh
-python -m venv .venv
+uv sync --locked
+uv run pytest
+uv run uvicorn app.main:app --reload
 ```
 
-Activate it with `.\.venv\Scripts\Activate.ps1` in PowerShell or `source .venv/bin/activate` in bash. Then run:
-
-```sh
-python -m pip install -e ".[test]"
-python -m pytest
-python -m uvicorn app.main:app --reload
-```
+uv uses Python 3.12 by default, creates `.venv`, and installs the application and its development dependencies from `uv.lock`.
 
 Open [the interactive API docs](http://127.0.0.1:8000/docs), expand **POST /bookmarks**, and choose **Try it out**. Submit this body:
 
