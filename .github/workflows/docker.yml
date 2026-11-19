@@ -13,15 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build and start the API
         run: |
           docker build -t bookmarks-api .
           docker run -d --name bookmarks -p 127.0.0.1:8000:8000 bookmarks-api
       - name: Check the bookmarks endpoint
         run: |
-          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
-            http://127.0.0.1:8000/bookmarks | jq -e '. == []'
+          curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 \
+            --output bookmarks.json http://127.0.0.1:8000/bookmarks
+          jq -e '. == []' bookmarks.json
       - name: Show server logs
         if: always()
         run: docker logs bookmarks
