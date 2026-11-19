@@ -1,13 +1,15 @@
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, HttpUrl, StringConstraints
+from pydantic import BaseModel, StringConstraints
 
 
-class BookmarkCreate(BaseModel):
-    url: HttpUrl
-    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+class UserCreate(BaseModel):
+    username: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=32, pattern=r"^[A-Za-z0-9_]+$")
+    ]
+    display_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 
 
-class Bookmark(BookmarkCreate):
+class User(UserCreate):
     id: UUID

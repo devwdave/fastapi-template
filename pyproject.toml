@@ -3,9 +3,9 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fastapi-bookmarks-template"
+name = "fastapi-template"
 version = "0.1.0"
-description = "A small layered FastAPI service for saving bookmarks"
+description = "A small FastAPI template with a layered user-record example"
 requires-python = ">=3.11"
 dependencies = ["fastapi>=0.115,<1", "pydantic>=2.8,<3", "uvicorn>=0.30,<1"]
 

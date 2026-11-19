@@ -20,12 +20,12 @@ jobs:
         run: docker compose up --build --wait
       - name: Query PostgreSQL over TCP
         run: |
-          PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U bookmarks -d bookmarks -c 'SELECT 1'
-      - name: Check the bookmarks endpoint
+          PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U app -d app -c 'SELECT 1'
+      - name: Check the users endpoint
         run: |
           curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 \
-            --output bookmarks.json http://127.0.0.1:8000/bookmarks
-          jq -e '. == []' bookmarks.json
+            --output users.json http://127.0.0.1:8000/users
+          jq -e '. == []' users.json
       - name: Show server logs
         if: always()
         run: docker compose logs
