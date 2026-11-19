@@ -14,6 +14,19 @@ uv run uvicorn app.main:app --reload
 
 uv uses Python 3.12 by default, creates `.venv`, and installs the application and its development dependencies from `uv.lock`.
 
+## Run with Docker
+
+From the repository root, build the image and start the API.
+
+```sh
+docker build -t bookmarks-api .
+docker run --rm -p 127.0.0.1:8000:8000 bookmarks-api
+```
+
+Leave the container running while you try the API. Press Ctrl+C to stop it. Each new container starts with an empty bookmark collection.
+
+## Try the API
+
 Open [the interactive API docs](http://127.0.0.1:8000/docs), expand **POST /bookmarks**, and choose **Try it out**. Submit this body:
 
 ```json
