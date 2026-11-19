@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [Dockerfile, .dockerignore, "app/**", pyproject.toml, uv.lock, .github/workflows/docker.yml]
+    paths: [compose.yaml, Dockerfile, .dockerignore, "app/**", pyproject.toml, uv.lock, .github/workflows/docker.yml]
 
 permissions:
   contents: read
@@ -12,12 +12,15 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      POSTGRES_PASSWORD: ephemeral-ci-password
     steps:
       - uses: actions/checkout@v6
-      - name: Build and start the API
+      - name: Build and start the stack
+        run: docker compose up --build --wait
+      - name: Query PostgreSQL over TCP
         run: |
-          docker build -t bookmarks-api .
-          docker run -d --name bookmarks -p 127.0.0.1:8000:8000 bookmarks-api
+          PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U bookmarks -d bookmarks -c 'SELECT 1'
       - name: Check the bookmarks endpoint
         run: |
           curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 \
@@ -25,4 +28,4 @@ jobs:
           jq -e '. == []' bookmarks.json
       - name: Show server logs
         if: always()
-        run: docker logs bookmarks
+        run: docker compose logs
