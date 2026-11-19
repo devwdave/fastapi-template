@@ -1,6 +1,20 @@
 services:
   api:
     build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://
+      PGHOST: db
+      PGDATABASE: ${POSTGRES_DB:-app}
+      PGUSER: ${POSTGRES_USER:-app}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/openapi.json', timeout=2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
     ports:
       - "127.0.0.1:8000:8000"
 
