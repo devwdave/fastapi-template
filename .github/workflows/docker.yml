@@ -1,0 +1,27 @@
+name: Docker smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [Dockerfile, .dockerignore, "app/**", pyproject.toml, uv.lock, .github/workflows/docker.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start the API
+        run: |
+          docker build -t bookmarks-api .
+          docker run -d --name bookmarks -p 127.0.0.1:8000:8000 bookmarks-api
+      - name: Check the bookmarks endpoint
+        run: |
+          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
+            http://127.0.0.1:8000/bookmarks | jq -e '. == []'
+      - name: Show server logs
+        if: always()
+        run: docker logs bookmarks
