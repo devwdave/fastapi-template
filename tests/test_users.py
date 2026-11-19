@@ -2,13 +2,21 @@ import logging
 from uuid import UUID
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from fastapi.testclient import TestClient
 
 from app.main import create_app
 
 
 @pytest.fixture
-def client():
+def database(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'test.db').as_posix()}")
+    command.upgrade(Config("alembic.ini"), "head")
+
+
+@pytest.fixture
+def client(database):
     with TestClient(create_app()) as client:
         yield client
 
@@ -24,6 +32,15 @@ def test_save_and_list(client):
     listed = client.get("/users")
     assert listed.status_code == 200
     assert listed.json() == [user]
+
+
+def test_user_survives_app_restart(database):
+    with TestClient(create_app()) as first:
+        created = first.post("/users", json={"username": "ada", "display_name": "Ada"})
+        assert created.status_code == 201
+
+    with TestClient(create_app()) as restarted:
+        assert restarted.get("/users").json() == [created.json()]
 
 
 def test_duplicate_and_request_logs(client, caplog):
