@@ -25,6 +25,22 @@ docker run --rm -p 127.0.0.1:8000:8000 bookmarks-api
 
 Leave the container running while you try the API. Press Ctrl+C to stop it. Each new container starts with an empty bookmark collection.
 
+## Run the API and PostgreSQL with Compose
+
+Create a `.env` file in the repository root and set `POSTGRES_PASSWORD` to a local development password. Git ignores this file. Then start both services:
+
+```sh
+docker compose up --build --wait
+```
+
+The API listens on `127.0.0.1:8000`. Database clients on your machine can connect to `127.0.0.1:5432` using the database and user `bookmarks` and the password from `.env`. Inside the Compose network, the database address is `db:5432`. To open a SQL shell:
+
+```sh
+docker compose exec db psql -U bookmarks -d bookmarks
+```
+
+Run `docker compose down` to stop the stack. PostgreSQL keeps its data in the `pgdata` volume. The bookmark endpoints still use the in-memory store.
+
 ## Try the API
 
 Open [the interactive API docs](http://127.0.0.1:8000/docs), expand **POST /bookmarks**, and choose **Try it out**. Submit this body:
