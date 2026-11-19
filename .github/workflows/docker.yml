@@ -1,14 +1,24 @@
-name: Docker smoke test
+name: Backend checks
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches: [main]
-    paths: [compose.yaml, Dockerfile, .dockerignore, "app/**", pyproject.toml, uv.lock, .github/workflows/docker.yml]
 
 permissions:
   contents: read
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.9"
+      - run: make test
+
   docker:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -16,16 +26,22 @@ jobs:
       POSTGRES_PASSWORD: ephemeral-ci-password
     steps:
       - uses: actions/checkout@v6
-      - name: Build and start the stack
-        run: docker compose up --build --wait
-      - name: Query PostgreSQL over TCP
+      - name: Build and migrate PostgreSQL
+        run: make up
+      - name: Create a user through the API
         run: |
-          PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U app -d app -c 'SELECT 1'
-      - name: Check the users endpoint
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 http://127.0.0.1:8000/users | jq -e '. == []'
+          curl -fsS --json '{"username":"ada","display_name":"Ada"}' http://127.0.0.1:8000/users > user.json
+          jq -e '.username == "ada" and (.id | type == "string")' user.json
+          test "$(docker compose exec -T db psql -U app -d app -Atc 'SELECT username FROM users')" = ada
+      - name: Recreate the API and retrieve the same record
         run: |
-          curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 \
-            --output users.json http://127.0.0.1:8000/users
-          jq -e '. == []' users.json
-      - name: Show server logs
-        if: always()
+          docker compose up -d --force-recreate --no-deps api
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 http://127.0.0.1:8000/users \
+            | jq -e --slurpfile created user.json '. == $created'
+      - name: Show container logs
+        if: failure()
         run: docker compose logs
+      - name: Stop the stack
+        if: always()
+        run: make down
